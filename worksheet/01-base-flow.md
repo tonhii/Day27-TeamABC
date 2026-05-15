@@ -25,15 +25,51 @@ Nếu chưa hiểu → quay lại đọc lại 1 lần nữa. Đừng đi tiếp
 Vẽ flow ra giấy hoặc trên bảng (1 thành viên vẽ, cả nhóm góp ý). Có thể dùng ASCII đơn giản:
 
 ```text
-(vẽ flow của nhóm vào đây — hoặc dán link ảnh chụp bảng)
+   [Tourist message]
+          │
+          ▼
+   ┌──────────────────┐
+   │ Intent Classify  │  ← Keyword regex ($0) cho cả 3 configs
+   │ (Visa / Guide /  │     (LLM classifier là option nâng cao,
+   │  Weather /       │      nhóm chốt KHÔNG dùng để giữ cost thấp)
+   │  Booking /       │
+   │  Complaint)      │
+   └────────┬─────────┘
+            │
+   ┌────────┼────────────┬──────────────┬─────────────┐
+   ▼        ▼            ▼              ▼             ▼
+ Visa     Guide       Weather        Booking      Complaint
+   │        │            │              │             │
+   ▼        ▼            ▼              ▼             ▼
+ ┌──────────────────────────┐    ┌──────────┐    ┌──────────┐
+ │  RAG retrieval (1,250t)  │    │  HANDOFF │    │ ESCALATE │
+ │  + Web search (800t)     │    │  → Sales │    │ → Manager│
+ │    (chỉ khi config ON)   │    │   $0 LLM │    │  $0 LLM  │
+ └──────────┬───────────────┘    └──────────┘    └──────────┘
+            │
+            ▼
+   ┌────────────────────────────────────────────────┐
+   │  Context Assembly:                              │
+   │  sys (500) + history (last N × 260) + RAG (1,250)│
+   │  + web results (800 nếu bật) + user msg (80)    │
+   └────────────────┬───────────────────────────────┘
+                    │
+                    ▼
+            ┌──────────────┐
+            │ LLM Response │  ← knob 1 chọn model
+            │  (output 180)│
+            └──────────────┘
+                    │
+                    ▼
+              [Reply to tourist]
 ```
 
 Khi vẽ, đảm bảo flow có 4 điểm:
 
-1. **Intent classification** — phân loại ý định
-2. **Route theo intent** — 5 nhánh đi đâu (RAG / Web search / Handoff / Escalate)
-3. **Context assembly** — ráp system prompt + history + RAG + web (nếu bật) + user msg
-4. **Response generation** — model tạo câu trả lời
+1. **Intent classification** — phân loại ý định ✅
+2. **Route theo intent** — 5 nhánh đi đâu (RAG / Web search / Handoff / Escalate) ✅
+3. **Context assembly** — ráp system prompt + history + RAG + web (nếu bật) + user msg ✅
+4. **Response generation** — model tạo câu trả lời ✅
 
 Nếu nhóm vẽ thiếu 1 trong 4 bước → bổ sung trước khi đi tiếp.
 
@@ -56,11 +92,11 @@ Trước khi điền vào ô bên dưới, đọc nhanh mục **3. Decision Poin
 Options:
 
 ```text
-□ Cheap        (Gemini Flash-Lite / DeepSeek V4 Flash / GPT-4o-mini)
-□ Mid          (Gemini Flash / Claude Haiku 4.5)
-□ Strong       (DeepSeek V4 Pro / Claude Sonnet 4.6)
-□ Premium      (Claude Opus 4.7 / GPT-5.5)
-□ Mix          (model khác nhau cho intent khác nhau — viết rõ)
+☑ Cheap        (Gemini Flash-Lite / DeepSeek V4 Flash / GPT-4o-mini)
+☑ Mid          (Gemini Flash / Claude Haiku 4.5)
+☑ Strong       (DeepSeek V4 Pro / Claude Sonnet 4.6)
+□ Premium      (Claude Opus 4.7 / GPT-5.5) — quá đắt cho use case này
+□ Mix          (đã cân nhắc nhưng chốt không dùng để giữ comparison đơn giản)
 ```
 
 **Câu hỏi gợi mở cho nhóm** (trả lời trước khi chọn):
@@ -70,7 +106,15 @@ Options:
 - Có nên dùng cheap cho phân loại + strong cho trả lời không?
 
 ```text
-(viết suy nghĩ của nhóm vào đây — chưa cần chốt option, chỉ cần thấy hướng)
+Travel chatbot tiếng Anh phục vụ tourist quốc tế → câu hỏi phần lớn là FAQ (90% Guide/Visa/Weather),
+không yêu cầu reasoning sâu. Cheap model đủ cho Guide; nhưng Visa/Weather cần info chính xác →
+cần model hiểu instruction tốt hơn và kết hợp web search.
+
+Nhóm chốt 3 tier: Cheap (GPT-4o-mini), Mid (Haiku 4.5), Strong (Sonnet 4.6) — không dùng Premium
+(Opus 4.7) vì over-engineering cho travel FAQ + cost gấp ~5× Sonnet không justify được benefit.
+
+Classifier: keyword regex ($0) cho cả 3 configs — 5 intent đủ phân biệt được bằng keyword
+("visa", "weather", "book", "complaint" + fallback Guide).
 ```
 
 ### Knob 2 — Web search
@@ -80,9 +124,9 @@ Options:
 Options:
 
 ```text
-□ OFF              (chỉ dùng RAG — knowledge base có sẵn)
-□ ON selective    (bật cho 1–2 intent cần real-time: visa, weather)
-□ ON broad         (bật cho hầu hết intent)
+☑ OFF              (chỉ dùng RAG — knowledge base có sẵn)         → Config Budget
+☑ ON selective    (bật cho 1–2 intent cần real-time: visa, weather) → Config Balanced + Premium
+□ ON broad         (bật cho hầu hết intent — không cần, gây waste)
 ```
 
 **Câu hỏi gợi mở:**
@@ -92,7 +136,15 @@ Options:
 - Web search tốn $0.005/call + 800 tokens — bật bừa có lợi không?
 
 ```text
-(viết suy nghĩ của nhóm vào đây)
+Visa policy VN thay đổi nhiều lần trong 2024–2026 (e-visa mở rộng → 80+ quốc gia, miễn visa
+mở rộng → 14 nước) → RAG sẽ outdated nhanh → web search ON cho Visa là quan trọng.
+
+Weather là real-time intrinsically → không có lựa chọn khác, phải web search.
+
+Guide (destination/itinerary/food) thay đổi chậm → RAG đủ. Bật web cho Guide tốn $$ không cần.
+
+→ Chốt: 2/3 configs (Balanced + Premium) bật web cho Visa + Weather; Budget tắt hết để tối
+ưu cost (chấp nhận trade-off info có thể outdated ở Visa).
 ```
 
 ### Knob 3 — History management
@@ -102,10 +154,10 @@ Options:
 Options:
 
 ```text
-□ Last 3 turns        (nhẹ nhất, dễ quên)
-□ Last 5 turns        (cân bằng)
-□ Full history        (nhớ tất cả, đắt nhất ở conv dài)
-□ Summarize every 5   (nâng cao — cần 1 LLM call phụ để tóm tắt)
+☑ Last 3 turns        (nhẹ nhất, dễ quên)               → Config Budget
+☑ Last 5 turns        (cân bằng)                         → Config Balanced
+☑ Full history        (nhớ tất cả, đắt nhất ở conv dài)  → Config Premium
+□ Summarize every 5   (nâng cao — cần 1 LLM call phụ để tóm tắt — phức tạp, skip)
 ```
 
 **Câu hỏi gợi mở:**
@@ -115,7 +167,17 @@ Options:
 - Scenario B trung bình 7 lượt → mỗi turn thêm 260 tokens — tổng thêm bao nhiêu?
 
 ```text
-(viết suy nghĩ của nhóm vào đây)
+Scenario A 4 lượt: full history = 3×260 = 780 tokens extra ở turn cuối → khá nhẹ.
+Scenario B 7 lượt: full history = 6×260 = 1,560 tokens extra ở turn cuối → đáng kể.
+
+Last 3 đủ cho FAQ ngắn (Budget Bot phục vụ FAQ đơn giản, ít cần context). Tourist hỏi visa
+turn 1 rồi turn 4 hỏi food → 2 chủ đề độc lập, không cần nhớ.
+
+Last 5 phù hợp tourism: tourist hay nói budget/dates/preferences ở turn 1–2 rồi mới refine.
+5 turns cover được context quan trọng mà không quá đắt.
+
+Full chỉ justify khi conversation phức tạp (premium concierge) — khách VIP hỏi 7–10 lượt
+về 1 trip, cần consistency tuyệt đối.
 ```
 
 ---
@@ -127,34 +189,34 @@ Chưa cần quyết định cuối cùng. Chỉ cần phác thảo: nhóm dự �
 **Combo 1 (định hướng cheap)**:
 
 ```text
-Model: ___    Web: ___    History: ___    (đặt tên dự kiến: ___)
+Model: GPT-4o-mini ($0.15/$0.60)    Web: OFF    History: Last 3    (đặt tên dự kiến: Budget Bot)
 ```
 
 **Combo 2 (định hướng premium)**:
 
 ```text
-Model: ___    Web: ___    History: ___    (đặt tên dự kiến: ___)
+Model: Claude Sonnet 4.6 ($3/$15)    Web: ON selective (Visa+Weather)    History: Full    (đặt tên dự kiến: Premium Concierge)
 ```
 
 **Combo 3 (định hướng balanced / smart mix)**:
 
 ```text
-Model: ___    Web: ___    History: ___    (đặt tên dự kiến: ___)
+Model: Claude Haiku 4.5 ($1/$5)    Web: ON selective (Visa+Weather)    History: Last 5    (đặt tên dự kiến: Balanced Concierge)
 ```
 
 **Combo 4** (optional — nếu nhóm có ý tưởng khác):
 
 ```text
-Model: ___    Web: ___    History: ___    (đặt tên dự kiến: ___)
+(bỏ qua — 3 combo trên đã đủ thấy tradeoff trên cả 3 knobs)
 ```
 
 ---
 
 ## Bảng kiểm trước khi sang file tiếp theo
 
-- [ ] Đã vẽ flow base có đủ 4 bước (Intent → Route → Context → Response)
-- [ ] Hiểu Booking + Khiếu nại = $0 LLM cost (chuyển con người)
-- [ ] Đã phác thảo ≥3 combo khác nhau (chưa cần chi tiết)
-- [ ] Nhóm đồng thuận về hướng đi mỗi combo
+- [x] Đã vẽ flow base có đủ 4 bước (Intent → Route → Context → Response)
+- [x] Hiểu Booking + Khiếu nại = $0 LLM cost (chuyển con người)
+- [x] Đã phác thảo ≥3 combo khác nhau (chưa cần chi tiết)
+- [x] Nhóm đồng thuận về hướng đi mỗi combo
 
 Xong → 10:25 chuyển sang **Main phase**. Mở `02-config-design.md`.
