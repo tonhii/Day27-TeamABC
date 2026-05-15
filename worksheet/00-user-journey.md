@@ -27,7 +27,7 @@ Viết **5–7 câu hỏi bằng tiếng Anh** mình sẽ thật sự gửi cho 
 
 → Mỗi người viết vào ô dưới (chưa có gì sẵn — đừng nhìn người bên cạnh):
 
-### Tourist #1 (Tên thành viên: Nhi)
+### Tourist #1 (Tên thành viên: Hồ Thị Tố Nhi)
 
 ```text
 1. Hi, I'm planning a 2-week trip to Vietnam in October with my family. Where should we go?
@@ -42,26 +42,14 @@ Viết **5–7 câu hỏi bằng tiếng Anh** mình sẽ thật sự gửi cho 
 ### Tourist #2 (Tên thành viên: Lê Thị Phương)
 
 ```text
-1. I'm a solo female traveler from the UK planning a trip to Vietnam next month. Is it safe for women traveling alone?
-2. Do I need a visa as a UK citizen? I'm staying for 3 weeks.
-3. What's the best way to get from Hanoi to Ha Long Bay? Should I take a bus or a private car?
-4. Can you recommend some authentic Vietnamese cooking classes in Hoi An?
-5. Is it easy to find vegetarian food in Vietnam?
-6. How much should I expect to spend per day on food and transport if I'm on a budget?
-7. I'm interested in trekking in Sapa. What's the weather like there in November?
-```
+
+
 ```
 
 ### Tourist #3 (Tên thành viên: Trần Tiến Long)
 
 ```text
-1. I'm from Australia and I'm planning a 3-week trip to Vietnam in December. Is it safe to travel there alone?
-2. Do Australian citizens need a visa to enter Vietnam? How long does it take to get one?
-3. What's the best way to get from Hanoi to Ha Long Bay? Should I take a bus or a private car?
-4. Can you recommend some authentic Vietnamese cooking classes in Hoi An?
-5. Is it easy to find vegetarian food in Vietnam?
-6. How much should I expect to spend per day on food and transport if I'm on a budget?
-7. I'm interested in trekking in Sapa. What's the weather like there in November?
+
 ```
 
 ---
